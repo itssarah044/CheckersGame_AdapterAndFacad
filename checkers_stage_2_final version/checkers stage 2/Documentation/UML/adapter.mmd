@@ -1,0 +1,35 @@
+---
+title: Adapter Pattern - AI Hint (Stage 2)
+---
+classDiagram
+    direction LR
+    class Controller {
+        <<Client>>
+        -hintProvider : HintProvider
+        +Controller(player, input, output)
+        +requestHint() void
+    }
+    class HintProvider {
+        <<interface - Target>>
+        +getHint(squares : Square[][], playerID : int) int[]
+    }
+    class AIHintAdapter {
+        <<Adapter>>
+        ~theAI : AI
+        +AIHintAdapter(newAI : AI)
+        +getHint(squares : Square[][], playerID : int) int[]
+        -toAIBoard(squares, playerID, flip) Board
+        -findMove(before, after, flip) int[]
+        -toSquareID(row, col, flip) int
+    }
+    class AI {
+        <<Adaptee - external code>>
+        -depth : int
+        +AI(depth : int)
+        +move(state : Board) Board
+        +randomAI(board : Board) Board
+    }
+
+    Controller --> HintProvider : uses
+    HintProvider <|.. AIHintAdapter
+    AIHintAdapter --> AI : adaptee

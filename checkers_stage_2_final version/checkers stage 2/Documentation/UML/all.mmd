@@ -1,0 +1,103 @@
+---
+title: Checkers - Applied Design Patterns (Stage 1 + Stage 2)
+---
+classDiagram
+    direction TB
+
+    %% ===== Stage 1: Builder (Server) =====
+    class HandleSession {
+        <<Client / Director>>
+        -checkers : Game
+        -timer : GameTimer
+        +HandleSession(p1 : Socket, p2 : Socket)
+        +run() void
+        -configureTimer() void
+    }
+    class GameBuilder {
+        <<interface - Builder>>
+        +createBoard() void
+        +initializeSquares() void
+        +placePlayerPieces() void
+        +build() Game
+    }
+    class StandardGameBuilder {
+        <<Concrete Builder>>
+        -squares : Square[][]
+        +createBoard() void
+        +initializeSquares() void
+        +placePlayerPieces() void
+        +build() Game
+    }
+    class Game {
+        <<Product>>
+        -squares : Square[][]
+        +Game(squares : Square[][])
+        +getSquare(id : int) Square
+        +isOver() boolean
+    }
+    HandleSession ..> GameBuilder : uses
+    GameBuilder <|.. StandardGameBuilder
+    StandardGameBuilder ..> Game : builds
+    HandleSession --> Game
+
+    %% ===== Stage 1: Factory (Server + Client) =====
+    class TimerManager {
+        -timerFactory : TimerFactory
+        +getGameTimer(choice : int) GameTimer
+    }
+    class TimerFactory {
+        <<Factory>>
+        +getTimer(timerType : String) GameTimer
+    }
+    class GameTimer {
+        <<interface - Product>>
+        +startTurn(playerId : int) void
+        +endTurn(playerId : int) void
+        +getRemainingMillis(playerId : int) long
+        +getActivePlayer() int
+        +getDescription() String
+        +isExpired(playerId : int) boolean
+    }
+    class PerGameTimer {
+        <<Concrete Product>>
+        -bank : long[]
+    }
+    class PerTurnTimer {
+        <<Concrete Product>>
+        -turnStartedAt : long
+    }
+    HandleSession ..> TimerManager : uses
+    Controller ..> TimerManager : uses
+    TimerManager --> TimerFactory
+    TimerFactory ..> GameTimer : creates
+    GameTimer <|.. PerGameTimer
+    GameTimer <|.. PerTurnTimer
+    HandleSession --> GameTimer
+    Controller --> GameTimer
+
+    %% ===== Stage 2: Adapter (Client) =====
+    class Controller {
+        <<Client>>
+        -timer : GameTimer
+        -hintProvider : HintProvider
+        +run() void
+        +requestHint() void
+    }
+    class HintProvider {
+        <<interface - Target>>
+        +getHint(squares : Square[][], playerID : int) int[]
+    }
+    class AIHintAdapter {
+        <<Adapter>>
+        ~theAI : AI
+        +AIHintAdapter(newAI : AI)
+        +getHint(squares : Square[][], playerID : int) int[]
+    }
+    class AI {
+        <<Adaptee - external code>>
+        +move(state : Board) Board
+        +randomAI(board : Board) Board
+    }
+    Controller --> HintProvider : uses
+    HintProvider <|.. AIHintAdapter
+    AIHintAdapter --> AI : adaptee
